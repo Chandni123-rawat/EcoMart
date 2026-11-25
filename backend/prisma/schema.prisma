@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("GREEN_DATABASE_URL")
+}
+
+enum Condition {
+  LIKE_NEW
+  GOOD
+  FAIR
+}
+
+enum ListingStatus {
+  AVAILABLE
+  RESERVED
+  SOLD
+}
+
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COMPLETED
+}
+
+enum RequestKind {
+  PURCHASE
+  SWAP
+}
+
+model User {
+  id           String            @id
+  name         String
+  program      String
+  email        String            @unique
+  listings     Listing[]
+  requests     PurchaseRequest[]
+}
+
+model Category {
+  id       String    @id
+  name     String    @unique
+  listings Listing[]
+}
+
+model Listing {
+  id            String            @id @default(cuid())
+  name          String
+  categoryId    String
+  category      Category          @relation(fields: [categoryId], references: [id])
+  sellerId      String
+  seller        User              @relation(fields: [sellerId], references: [id])
+  brand         String
+  model         String
+  originalPrice Decimal          
+  price         Decimal          
+  age           Int
+  condition     Condition
+  description   String
+  images        Json
+  swap          Boolean           @default(false)
+  status        ListingStatus     @default(AVAILABLE)
+  createdAt     DateTime          @default(now())
+  requests      PurchaseRequest[]
+
+  @@index([categoryId, createdAt])
+  @@index([sellerId])
+}
+
+model PurchaseRequest {
+  id          String        @id @default(cuid())
+  listingId   String
+  listing     Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyerId     String
+  buyer       User          @relation(fields: [buyerId], references: [id])
+  status      RequestStatus @default(PENDING)
+  kind        RequestKind   @default(PURCHASE)
+  offer       String?
+  createdAt   DateTime      @default(now())
+  transaction Transaction?
+
+  @@unique([listingId, buyerId])
+  @@index([buyerId])
+}
+
+model Transaction {
+  id                String          @id @default(cuid())
+  requestId         String          @unique
+  request           PurchaseRequest @relation(fields: [requestId], references: [id])
+  agreedPrice       Decimal?       
+  buyerConfirmedAt  DateTime?
+  sellerConfirmedAt DateTime?
+  completedAt       DateTime?
+  createdAt         DateTime        @default(now())
+}

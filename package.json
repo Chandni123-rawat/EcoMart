@@ -1,0 +1,25 @@
+{
+  "name": "green-second-life",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -P \"npm run dev -w backend\" \"npm run dev -w frontend -- {@}\" --",
+    "build": "npm run build -w frontend",
+    "db:deploy": "npm run db:deploy -w backend",
+    "db:seed": "npm run db:seed -w backend",
+    "start": "npm run db:deploy && npm run db:seed && npm run build && npm start -w backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "dependencies": {
+    "npm": "^11.21.3",
+    "start": "^5.1.0"
+  }
+}
