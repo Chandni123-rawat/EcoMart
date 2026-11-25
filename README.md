@@ -1,87 +1,120 @@
 # GREEN · Second Life
 
-A campus marketplace for buying, selling and exchanging used academic essentials. The demo uses three switchable student profiles and four seeded listings. All amounts are in Indian rupees.
+GREEN · Second Life is a campus marketplace for buying, selling, and swapping used books, calculators, bicycles, and academic equipment. Students can find affordable essentials, pass on items they no longer need, and arrange handovers on campus.
 
-## Run locally
+## Features
 
-Install a supported Node.js release (22.12+ recommended), then open a terminal in this folder:
+| Phase | What it includes |
+| --- | --- |
+| **1. Marketplace** | Responsive homepage, featured listings, three switchable demo student profiles, product details, search, filters, sorting, photo uploads, listing management, purchase requests, and swap offers. |
+| **2. Fair pricing** | A suggested asking price, a typical price range, and a count of comparable sales. The seller can apply the suggestion and edit the final price. |
+| **3. Analytics** | Charts and tables comparing original prices, sold prices, and resale value across categories and conditions. |
+| **4. Live updates** | Socket.IO updates for new requests, seller decisions, and handover confirmations. |
+| **5. Notification inbox** | Saved notifications for each demo profile, an unread badge, and controls to mark one or all notifications as read. |
 
-```bash
+## Run on Windows with VS Code
+
+1. Extract the project ZIP or clone the repository.
+2. In VS Code, select **File → Open Folder** and open `green-second-life`. You should see `package.json`, `frontend/`, and `backend/` at the same level.
+3. Install **Node.js 22.12 or newer**, then open **Terminal → New Terminal**.
+4. Run the following commands.
+
+```powershell
+node -v
 npm ci
 npm start
 ```
 
-Open http://127.0.0.1:5173 on the same computer. Keep the terminal open while using the app. The first launch creates and seeds a local SQLite database through Prisma, builds the frontend, and starts the Express server. The database persists in `backend/prisma/green-local.db`. Demo listings and user-created activity persist across restarts.
+Open [http://127.0.0.1:5173](http://127.0.0.1:5173). Keep the terminal open while using the app. Press `Ctrl+C` to stop it.
 
-For live frontend and API development, run `npm run db:deploy` and `npm run db:seed` once, then run `npm run dev`. Vite opens on port 5173 and proxies the API and uploads to Express on port 4000.
-
-An environment file is optional. Use `backend/.env.example` if you need to override the database path, port, frontend origin, or configure Cloudinary. Set `API_PROXY_TARGET` in `frontend/.env` for a custom development API port. A separate frontend can set `VITE_API_URL` to the complete API base ending in `/api`.
-
-Image uploads accept up to five JPG, PNG or WebP files, at 5 MB per image. They use `backend/uploads/` by default. Set all three Cloudinary variables in `backend/.env` to use Cloudinary instead. Keep the uploads directory available between runs when using local storage.
+`npm start` applies database migrations, seeds the demo data, builds the frontend, and starts the Express server. **Docker is not required.** If PowerShell blocks `npm.ps1`, switch the VS Code terminal to **Command Prompt** or use `npm.cmd ci` and `npm.cmd start`.
 
 ## Try the demo
 
-1. As Aisha Sharma, open the Campus Roadster Bicycle and choose **Request purchase**.
-2. Switch to Kabir Mehta, open **My Activity**, and accept the incoming request. The bicycle is now reserved. Both students can reveal the other participant's demo contact to see where offline coordination would start.
-3. Confirm handover as Kabir. Switch to Aisha and confirm again. The bicycle becomes sold.
-4. To try a swap, browse an available listing marked **Swap** and send a description of the item you’re offering. The same acceptance and handover flow applies.
+### Purchase and handover
 
-Use **Sell an Item** to publish a listing and **My Activity → My listings** to edit or delete it while available and free of pending requests. The demo seed is safe to rerun and preserves existing listing activity.
+1. Open the app in two browser tabs. Select **Aisha Sharma** in one and **Kabir Mehta** in the other.
+2. As Aisha, open **Campus Roadster Bicycle** and select **Request purchase**.
+3. As Kabir, open **My Activity** and accept the incoming request. The bicycle becomes **Reserved**.
+4. Both students can view demo contact details and arrange payment and handover offline.
+5. Confirm the handover as Kabir first, then as Aisha. The listing stays reserved after the first confirmation and becomes **Sold** after the second.
+6. Open the **bell icon** to see the saved notifications. Try **Mark read** or **Mark all read**.
 
-## Structure
+If the bicycle has already been used in a demo, choose another available listing and switch the seller tab to that listing’s owner.
+
+### Swap and listing management
+
+- To test an exchange, open an available listing marked **Swap**, choose **Propose a swap**, and describe your offer. The seller can accept or reject it in **My Activity**.
+- To test listing management, open **Sell an Item**, fill in the details, upload a photo, and publish. Use **My Activity → My listings** to edit or delete an available listing with no pending requests.
+- To test the inbox while offline, close the seller’s tab before sending a request. Reopen the app, select the seller, and check the bell icon.
+
+## Historical dataset and fair pricing
+
+The [historical pricing CSV](data-analytics/historical-prices.csv) contains **200 records** from the supplied workbook: **80 books, 60 calculators, and 60 bicycles**. The fair-price estimator and analytics dashboard use this dataset. The active marketplace has four separate seeded demo listings.
+
+The estimator finds records in the same category and condition within one year of the entered age. When at least five records match, it calculates the median **sold price ÷ original price** ratio and applies it to the seller’s original purchase price. The 25th and 75th percentiles define the typical range. **No machine-learning model was trained.**
+
+To check a known result, open **Sell an Item** and enter:
+
+| Field | Value |
+| --- | --- |
+| Category | Books |
+| Condition | Good |
+| Age | 2 years |
+| Original price | ₹1,000 |
+
+Select **Estimate fair price**. The expected suggestion is **₹618.82**, with a range of **₹575.24–₹650** from **26 comparable records**. The seller can choose **Use suggested price** or enter a different price. The dataset has no Academic Equipment records, so those listings use manual pricing.
+
+Open **Analytics** to compare average original price, average sold price, and value retained. Change the condition filter to update both the chart and table.
+
+## Technology stack
+
+- **Frontend:** React, Vite, Tailwind CSS, Lucide React, and Recharts
+- **Backend:** Node.js and Express
+- **Database:** SQLite with Prisma
+- **Real-time updates:** Socket.IO
+- **Image uploads:** Multer with local storage by default and optional Cloudinary storage
+
+## Project structure
 
 ```text
-frontend/
-  public/images/       Sample product photography
-  src/components/     Shared UI and shadcn-style Button
-  src/                 React pages, API client and design system
-backend/
-  prisma/              Schema, initial migration and demo seed
-  src/routes/          REST routing
-  src/controllers/     Listing and request operations
-  src/services/        Prisma, transaction locking and image storage
-data-analytics/        Reserved home for historical pricing work
-package.json          Local startup commands
+green-second-life/
+├── frontend/        # React pages, shared components, and styles
+├── backend/
+│   ├── prisma/      # Database schema, migrations, and demo seed
+│   └── src/         # API routes, controllers, and services
+├── data-analytics/  # Historical pricing CSV and dataset notes
+├── package.json
+└── README.md
 ```
 
-## Database schema
+## API overview
 
-| Prisma model | Fields and relationships |
+| Endpoint | Purpose |
 | --- | --- |
-| User | Demo student ID, name, program and demo email. Has many listings and outgoing requests. |
-| Category | ID and unique name. Has many listings. |
-| Listing | Category and seller foreign keys, name, brand, model, description, age, condition, original and selling prices, image URLs, swap flag, status and creation time. |
-| PurchaseRequest | Listing and buyer foreign keys, kind, optional swap offer, status and creation time. Unique per listing and buyer. |
-| Transaction | Unique request foreign key, agreed purchase price for purchases, buyer and seller confirmation times, completion time and creation time. |
+| `GET /api/health` | Check database connectivity |
+| `GET /api/users` | List demo student profiles |
+| `GET /api/categories` | List product categories |
+| `GET /api/listings` | Browse, search, filter, and sort listings |
+| `GET /api/listings/:id` | View listing details and seller information |
+| `POST /api/listings` | Publish a listing with photos |
+| `PUT /api/listings/:id` | Edit an eligible listing |
+| `DELETE /api/listings/:id` | Delete an eligible listing |
+| `GET /api/requests` | View sent and received requests |
+| `POST /api/requests` | Send a purchase or swap request |
+| `PATCH /api/requests/:id/decision` | Accept or reject a request |
+| `POST /api/requests/:id/confirm` | Record handover confirmation |
+| `GET /api/requests/:id/contact` | View the other participant’s demo contact after acceptance |
+| `GET /api/pricing/estimate` | Estimate a fair price from comparable sales |
+| `GET /api/analytics/historical` | Get historical category statistics |
+| `GET /api/notifications` | Read the current demo student’s inbox |
+| `PATCH /api/notifications/:id/read` | Mark one notification as read |
+| `PATCH /api/notifications/read-all` | Mark all notifications as read |
 
-SQLite serializes listing mutations before request decisions and confirmations read the current state. Accepting a request reserves the listing, creates its transaction and rejects any competing pending requests. Both confirmations are recorded before the listing becomes sold.
+Personalized API calls use the `X-Demo-User` header with `aisha`, `kabir`, or `maya`. The profile selector handles this in the app.
 
-## REST API
+## Local data and configuration
 
-Calls marked **Demo student** require `X-Demo-User` with one of the seeded IDs, `aisha`, `kabir` or `maya`. The header switches the demo identity.
+The SQLite database is stored in `backend/prisma/green-local.db`. Uploaded photos are stored in `backend/uploads/` by default. Keep both if you want to retain listings, photos, requests, and notifications between project versions. Environment overrides are optional and documented in `backend/.env.example` and `frontend/.env.example`.
 
-| Method | Route | Behavior |
-| --- | --- | --- |
-| GET | /api/health | Check SQLite connectivity |
-| GET | /api/users | List demo student profiles |
-| GET | /api/categories | List categories |
-| GET | /api/analytics/historical | Compare historical prices by category, optionally filtered by condition |
-| GET | /api/pricing/estimate | Estimate a fair price from comparable historical records |
-| GET | /api/listings | Search, filter and sort listings |
-| GET | /api/listings/:id | Read listing and seller profile |
-| POST | /api/listings | Publish with multipart listing fields and an image. Demo student. |
-| PUT | /api/listings/:id | Replace listing details and optionally images. Demo seller. |
-| DELETE | /api/listings/:id | Delete an eligible listing. Demo seller. |
-| GET | /api/requests | View sent and received requests. Demo student. |
-| POST | /api/requests | Send `{ listingId, kind, offer? }`. Kind defaults to `PURCHASE`; `SWAP` requires an offer and an eligible listing. Demo buyer. |
-| PATCH | /api/requests/:id/decision | Send `{ decision: "accept" }` or `{ decision: "reject" }`. Demo seller. |
-| POST | /api/requests/:id/confirm | Record the caller's handover confirmation. Demo participant. |
-| GET | /api/requests/:id/contact | Reveal the other participant's demo contact after acceptance. Demo participant. |
-
-Listing queries support `search`, `category`, `minPrice`, `maxPrice`, `brand`, `maxAge`, `condition` (`LIKE_NEW`, `GOOD` or `FAIR`), `available=true`, `seller=me` (demo student required), and `sort` (`price-asc` or `price-desc`, default newest).
-
-Listing writes use multipart form data: `name`, `categoryId`, `brand`, `model`, `originalPrice`, `age`, `condition`, `description`, `price`, `swap` (`true` or `false`), and one or more `images` parts. On edit, omit the image parts to retain existing photos.
-
-Socket.IO delivers in-app notices for new purchase and swap requests, seller decisions, and handover confirmations. The marketplace refreshes availability when an item becomes reserved or sold. Request notices go to the relevant demo profiles. Open two tabs, select a different student in each tab, and follow the demo steps to see the updates. A reconnect refreshes current marketplace and activity data. Notices are shown while connected. Open **Analytics** to compare historical original and sold prices with a Recharts chart and a category statistics table. The condition filter applies to both views. The seller form can estimate a fair price from the historical CSV. Enter category, condition, age and original price, then click **Estimate fair price**. Applying the estimate is optional, and the selling price remains editable.
-
-The estimate endpoint takes `category`, `condition`, `age` and `originalPrice`. It uses the median sold-to-original-price ratio from records in the same category and condition within one year of the entered age. The 25th and 75th percentiles give the displayed range. The workbook's Excellent condition is treated as Like new. A minimum of five comparable records is required. Academic Equipment currently has no pricing records.
+When pushing to GitHub, keep the source, `package-lock.json`, Prisma migrations, and historical CSV. The repository’s `.gitignore` excludes installed dependencies, build output, `.env` files, local databases, and uploaded photos.
